@@ -6,33 +6,33 @@ use IslamicNetwork\MoonSighting\Isha;
 
 class Method
 {
-    /**
-     * All methods available for computation
-     */
+    // ... (Rest of your constants: METHOD_JAFARI, METHOD_KARACHI, etc.) ...
     const METHOD_JAFARI = 'JAFARI'; // 0;
     const METHOD_KARACHI = 'KARACHI'; // 1;
     const METHOD_ISNA = 'ISNA'; // 2;
-    const METHOD_MWL = 'MWL'; // 3
+    const METHOD_MWL = 'MWL'; // 3;
     const METHOD_MAKKAH = 'MAKKAH'; // 4;
     const METHOD_EGYPT = 'EGYPT'; // 5;
     const METHOD_TEHRAN = 'TEHRAN'; // 7;
-    const METHOD_GULF = 'GULF'; // 8
-    const METHOD_KUWAIT = 'KUWAIT'; // 9
-    const METHOD_QATAR = 'QATAR'; // 10
-    const METHOD_SINGAPORE = 'SINGAPORE'; // 11
-    const METHOD_FRANCE = 'FRANCE'; // 12
-    const METHOD_TURKEY = 'TURKEY'; // 13
-    const METHOD_RUSSIA = 'RUSSIA'; // 14
-    const METHOD_MOONSIGHTING = 'MOONSIGHTING'; // 15
-    const METHOD_DUBAI = 'DUBAI'; // 16
-    const METHOD_JAKIM  = 'JAKIM'; // 17
-    const METHOD_TUNISIA = 'TUNISIA'; // 18
-    const METHOD_ALGERIA = 'ALGERIA'; // 19
-    const METHOD_KEMENAG = 'KEMENAG'; // 20
-    const METHOD_MOROCCO = 'MOROCCO'; // 21
-    const METHOD_PORTUGAL = 'PORTUGAL'; // 22
-    const METHOD_JORDAN = 'JORDAN'; // 23
+    const METHOD_GULF = 'GULF'; // 8;
+    const METHOD_KUWAIT = 'KUWAIT'; // 9;
+    const METHOD_QATAR = 'QATAR'; // 10;
+    const METHOD_SINGAPORE = 'SINGAPORE'; // 11;
+    const METHOD_FRANCE = 'FRANCE'; // 12;
+    const METHOD_TURKEY = 'TURKEY'; // 13;
+    const METHOD_RUSSIA = 'RUSSIA'; // 14;
+    const METHOD_MOONSIGHTING = 'MOONSIGHTING'; // 15;
+    const METHOD_DUBAI = 'DUBAI'; // 16;
+    const METHOD_JAKIM  = 'JAKIM'; // 17;
+    const METHOD_TUNISIA = 'TUNISIA'; // 18;
+    const METHOD_ALGERIA = 'ALGERIA'; // 19;
+    const METHOD_KEMENAG = 'KEMENAG'; // 20;
+    const METHOD_MOROCCO = 'MOROCCO'; // 21;
+    const METHOD_PORTUGAL = 'PORTUGAL'; // 22;
+    const METHOD_JORDAN = 'JORDAN'; // 23;
     const METHOD_CUSTOM = 'CUSTOM'; // 99
+    const METHOD_MYANMAR = 'MYANMAR'; // Add Myanmar Method
+
 
     /**
      * Name of custom method
@@ -91,6 +91,7 @@ class Method
     public static function getMethodCodes(): array
     {
         return [
+            // ... (Your existing method codes) ...
             self::METHOD_MWL,
             self::METHOD_ISNA,
             self::METHOD_EGYPT,
@@ -115,13 +116,15 @@ class Method
             self::METHOD_PORTUGAL,
             self::METHOD_JORDAN,
             self::METHOD_CUSTOM,
+            self::METHOD_MYANMAR, // Add Myanmar to the list
         ];
     }
 
-    public static function getMethods(): array
+     public static function getMethods(): array
     {
         return [
-             self::METHOD_MWL => [
+           // ... (Your existing methods) ...
+            self::METHOD_MWL => [
                 'id' => 3,
                 'name' => 'Muslim World League',
                 'params' => [
@@ -402,6 +405,26 @@ class Method
             self::METHOD_CUSTOM => [
                 'id' => 99
             ],
+            self::METHOD_ZNNT_MYANMAR => [
+                'id' => 24, // Unique ID
+                'name' => 'Zin Naung Naung Thet of Myanmar (Burmese) official Timetable',
+                'params' => [
+                    PrayerTimes::FAJR => 'MWL-3',        // Regular: MWL - 3 minutes
+                    PrayerTimes::DHUHR => 'MWL+0',        // Regular: Same as MWL
+                    PrayerTimes::ASR => 'MWL+3',          // Regular: MWL + 3 minutes
+                    PrayerTimes::MAGHRIB => 'MWL+3',      // Regular: MWL + 3 minutes
+                    PrayerTimes::ISHA => 'MWL+0',      //We are going to base isha on MWL by default.
+                    'RAMADAN' => [
+                        PrayerTimes::IMSAK => 'MWL+7',    // Ramadan: MWL + 7 minutes (for Imsak)
+                        PrayerTimes::FAJR => 'MWL+5',    // Ramadan: MWL + 5 minutes (overrides regular Fajr)
+                    ]
+                ],
+                'location' => [ // Yangon, Myanmar
+                    'latitude' => 16.8660694,
+                    'longitude' => 96.195132
+                ]
+            ],
+
         ];
     }
 }
