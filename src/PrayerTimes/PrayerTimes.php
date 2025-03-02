@@ -29,7 +29,7 @@ class PrayerTimes
     const IMSAK = 'Imsak';
     const FAJR = 'Fajr';
     const SUNRISE = 'Sunrise';
-    const ZHUHR = 'Dhuhr';
+    const DHUHR = 'Dhuhr';
     const ASR = 'Asr';
     const SUNSET = 'Sunset';
     const MAGHRIB = 'Maghrib';
@@ -251,7 +251,7 @@ class PrayerTimes
             self::IMSAK => 5,
             self::FAJR => 5,
             self::SUNRISE => 6,
-            self::ZHUHR => 12,
+            self::DHUHR => 12,
             self::ASR => 13,
             self::SUNSET => 18,
             self::MAGHRIB => 18,
@@ -411,7 +411,7 @@ class PrayerTimes
         if ($this->isMin($this->settings->{self::ISHA})) {
             $times[self::ISHA] = $times[self::MAGHRIB] + $this->evaluate($this->settings->{self::ISHA})/ 60;
         }
-        $times[self::ZHUHR] += $this->evaluate($this->settings->{self::ZHUHR})/ 60;
+        $times[self::DHUHR] += $this->evaluate($this->settings->{self::DHUHR})/ 60;
 
         return $times;
     }
@@ -502,7 +502,7 @@ class PrayerTimes
         $imsak   = $this->sunAngleTime($this->evaluate($this->settings->{self::IMSAK}), $times[self::IMSAK], 'ccw');
         $sunrise = $this->sunAngleTime($this->riseSetAngle(), $times[self::SUNRISE], 'ccw');
         $fajr    = $this->sunAngleTime($this->evaluate($this->settings->{self::FAJR}), $times[self::FAJR], 'ccw');
-        $dhuhr   = $this->midDay($times[self::ZHUHR]);
+        $dhuhr   = $this->midDay($times[self::DHUHR]);
         $asr     = $this->asrTime($this->asrFactor(), $times[self::ASR]);
         $sunset  = $this->sunAngleTime($this->riseSetAngle(), $times[self::SUNSET]);
         $maghrib = $this->sunAngleTime($this->evaluate($this->settings->{self::MAGHRIB}), $times[self::MAGHRIB]);
@@ -511,7 +511,7 @@ class PrayerTimes
         return [
             self::FAJR => $fajr,
             self::SUNRISE => $sunrise,
-            self::ZHUHR => $dhuhr,
+            self::DHUHR => $dhuhr,
             self::ASR => $asr,
             self::SUNSET => $sunset,
             self::MAGHRIB => $maghrib,
@@ -767,7 +767,7 @@ class PrayerTimes
             self::IMSAK => $imsak,
             self::FAJR => $fajr,
             self::SUNRISE => $sunrise,
-            self::ZHUHR => $dhuhr,
+            self::DHUHR => $dhuhr,
             self::ASR => $asr,
             self::MAGHRIB => $maghrib,
             self::SUNSET => $sunset,
@@ -828,5 +828,164 @@ class PrayerTimes
 
         return $result;
     }
+    
+    //New code
+    public function getMethodParams($method)
+    {
+        $baseParams = Method::getMethods()[$method]['params'] ?? [];
 
+        if (isset($baseParams['RAMADAN']) && $this->isRamadan()) { // Assuming you have an isRamadan() method
+            // Merge Ramadan params, overriding base params
+            $baseParams = array_merge($baseParams, $baseParams['RAMADAN']);
+            unset($baseParams['RAMADAN']); // Remove the RAMADAN key itself
+        }
+        return $baseParams;
+    }
+    
+     private function adjustTime($time, $adjustment, $prayerName = null)
+    {
+
+        if (is_numeric($adjustment)) {
+            return $time + ($adjustment / (60*24)); // Simple adjustment (minutes as fraction of day)
+        }
+        if (is_string($adjustment)) {
+            if (preg_match('/^MWL([+-])(\d+)$/', $adjustment, $matches)) {
+                                $sign = $matches[1] === '+' ? 1 : -1;
+                $minutes = (int)$matches[2];
+
+                //Calculate time using MWL
+                $mwlTime = 0;
+                switch($prayerName){
+                   case self::FAJR:
+                       $mwlTime = $this->sunAngleTime(18, $this->julianDate, 'ccw');
+                       break;
+                   case self::DHUHR:
+                       $mwlTime = $this->midDay($this->julianDate);
+                       break;
+                   case self::ASR:
+                       $mwlTime = $this->asrTime(1, $this->julianDate); //Assuming Shafii for Asr if its MWL
+                       break;
+                    case self::MAGHRIB:
+                        $mwlTime = $this->sunAngleTime(0.833, $this->julianDate); //Sunset for Maghrib
+                        break;
+                    case self::ISHA: // Assuming isha
+                        $mwlTime = $this->sunAngleTime(17, $this->julianDate); // Isha angle for MWL
+                        break;
+                    case self::IMSAK:
+                        $mwlTime = $this->sunAngleTime(18, $this->julianDate, 'ccw'); //Fajr for Imsak.
+                }
+
+                // Apply the adjustment
+                return $mwlTime + ($sign * $minutes / (60 * 24)); // Convert minutes to days
+            }
+             // Existing string-based adjustments (like "90 min")
+            if (preg_match('/^(\d+)\s*min$/', $adjustment, $matches)) {
+                 $minutes = (int)$matches[1];
+                 //For Maghrib, it means to add to Sunset
+                 //For Isha, it means to add to Maghrib
+                 if($prayerName == self::MAGHRIB){
+                    return $time + ($minutes / (60 * 24));
+                 }else if($prayerName == self::ISHA){
+                    $maghribTime = $this->computeTime(5, $this->julianDate); //5 is Maghrib index
+                    $maghribAdj = $this->getMethodParams($this->calculationMethod)[self::MAGHRIB] ?? 0;
+                    $maghribTime = $this->adjustTime($maghribTime, $maghribAdj);
+                    return $maghribTime + ($minutes / (60 * 24));
+                 }
+
+            }
+        }
+
+        return $time; // Return original time if no adjustment needed
+    }
+
+
+    // Utility functions (Julian Date, Angle Calculations, etc.) - These remain largely the same
+
+
+    private function isRamadan()
+    {
+        // Implement your logic to determine if it's Ramadan.
+        // This is just a placeholder; you'll need to use a Hijri calendar
+        // library or your own implementation.
+        // Example (using a hypothetical HijriDate class):
+        //
+        // $hijriDate = new HijriDate();
+        // return $hijriDate->getMonth() == 9;  // 9 is Ramadan in the Hijri calendar
+          $currentDate = new \DateTime();
+          $currentDate->setTimezone(new \DateTimeZone('UTC'));
+
+        //For testing purposes, let's assume Ramadan is always the current month.
+        //Replace this with actual Hijri Calendar check.
+        return true; //Always Ramadan for testing.  CHANGE THIS!
+
+    }
+
+}
+
+//Helper Class (DMath)
+class DMath
+{
+    // degree sin
+    public static function sin($d)
+    {
+        return sin(deg2rad($d));
+    }
+
+    // degree cos
+    public static function cos($d)
+    {
+        return cos(deg2rad($d));
+    }
+
+    // degree tan
+    public static function tan($d)
+    {
+        return tan(deg2rad($d));
+    }
+
+    // degree arcsin
+    public static function arcsin($x)
+    {
+        return rad2deg(asin($x));
+    }
+
+    // degree arccos
+    public static function arccos($x)
+    {
+        return rad2deg(acos($x));
+    }
+
+    // degree arctan
+    public static function arctan($x)
+    {
+        return rad2deg(atan($x));
+    }
+
+    // degree arctan2
+    public static function arctan2($y, $x)
+    {
+        return rad2deg(atan2($y, $x));
+    }
+
+    // degree arccot
+    public static function arccot($x)
+    {
+        return rad2deg(atan(1 / $x));
+    }
+
+    // fix angle
+    public static function fixAngle($a)
+    {
+        $a = $a - 360 * (floor($a / 360));
+        $a = $a < 0 ? ($a + 360) : $a;
+        return $a;
+    }
+
+    // fix hour
+    public static function fixHour($a)
+    {
+        $a = $a - 24 * (floor($a / 24));
+        $a = $a < 0 ? ($a + 24) : $a;
+        return $a;
+    }
 }
